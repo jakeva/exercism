@@ -21,8 +21,8 @@ defmodule Words do
   end
 
   defp count_words(words) do
-    words |> Enum.reduce %{}, fn word, acc ->
+    words |> Enum.reduce(%{}, fn word, acc ->
       Map.update(acc, word, 1, &(&1 + 1))
-    end
+    end)
   end
 end
