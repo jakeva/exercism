@@ -14,54 +14,32 @@ defmodule PigLatin do
   Some groups are treated like vowels, including "yt" and "xr".
   """
   
-  @vowels ['a', 'e', 'i', 'o', 'u']
-  
+  @vowels ~w(a e i o u)
+
   @spec translate(phrase :: String.t()) :: String.t()
   def translate(phrase) do
     phrase
-    |> String.split(" ")
-    |> Enum.map(&(translate_word(&1)))
+    |> String.split
+    |> Enum.map(&String.graphemes/1)
+    |> Enum.map(&translate_word(&1, []))
     |> Enum.join(" ")
   end
-  
-  def translate_word(word) do
-    [first | rest] = word |> to_charlist()
-    case first do 
-      c when [c] in @vowels ->
-        [first] ++ rest ++ 'ay'
-      c when [c] == 'y' or [c] == 'x'->
-        handle_x_and_y_Words(first, rest)
-      _ ->
-        translate([first], rest)
-    end |> List.to_string()
+
+  def translate_word(word = [first | rest], acc)
+  when first in @vowels do
+    "#{word}#{acc|>Enum.reverse}ay"
   end
 
-  defp translate(consonants, [first | rest]) do
-    case should_treat_as_consonant(first, consonants) do
-      true ->
-        translate(consonants ++ [first], rest)
-      _ ->
-        [first] ++ rest ++ consonants ++ 'ay'
-    end
+  def translate_word(word = [first, second | _], _) 
+  when first in ~w(x y) and second not in @vowels do
+    "#{word}ay"
   end
 
-  defp handle_x_and_y_Words(first, rest) do
-    [next | _] = rest
-      case consonant?(next) do
-        true -> [first] ++ rest ++ 'ay'
-        _ -> translate([first], rest)
-    end 
+  def translate_word(["q", "u" | rest], acc) do
+    translate_word(rest, ["u", "q" | acc])
   end
 
-  defp should_treat_as_consonant(letter, consonants) do
-    consonant?(letter) or is_qu_word?(letter, consonants) 
-  end
-
-  defp consonant?(letter) do
-    [letter] not in @vowels
-  end
-
-  defp is_qu_word?(letter, consonants) do
-    [letter] == 'u' and [consonants |> List.last()] == 'q'
+  def translate_word([first | rest], acc) do
+    translate_word(rest, [first | acc])
   end
 end
